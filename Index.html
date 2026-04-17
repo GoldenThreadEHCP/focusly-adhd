@@ -1,938 +1,217 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Focusly — ADHD Support</title>
-<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap
+
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:#FDF8F2;font-family:'DM Sans','Segoe UI',sans-serif;color:#2E1F0F;min-height:100vh}
+body{
+  background:#FDF8F2;
+  font-family:'DM Sans','Segoe UI',sans-serif;
+  color:#2E1F0F;
+  min-height:100vh
+}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:#F2EBE0}
 ::-webkit-scrollbar-thumb{background:#E4D8C8;border-radius:3px}
+
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .fade-up{animation:fadeUp .35s ease both}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    transition-duration:.01ms!important
+  }
+}
 
 /* ── Layout ── */
 #app{display:flex;min-height:100vh;position:relative}
 
 /* Sidebar */
 #sidebar{
-width:220px;background:#F2EBE0;border-right:1px solid #E4D8C8;
-display:flex;flex-direction:column;padding:24px 0;
-height:100vh;position:fixed;top:0;left:0;z-index:200;
-overflow-y:auto;overflow-x:hidden;
-transform:translateX(0);
-transition:transform .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1), box-shadow .28s;
+  width:220px;
+  background:#F2EBE0;
+  border-right:1px solid #E4D8C8;
+  display:flex;
+  flex-direction:column;
+  padding:24px 0;
+  height:100vh;
+  position:fixed;
+  top:0;left:0;
+  z-index:200;
+  overflow-y:auto;
+  transition:transform .28s,width .28s,box-shadow .28s
 }
 #sidebar.hidden{transform:translateX(-220px)}
 #sidebar.floating{box-shadow:4px 0 24px rgba(60,30,10,.14)}
 
-/* When pinned, main shifts right. When not pinned, main fills full width */
 #main{
-flex:1;padding:32px 36px;max-width:900px;overflow-y:auto;
-transition:margin-left .28s cubic-bezier(.4,0,.2,1);
-margin-left:220px;
+  flex:1;
+  padding:32px 36px;
+  max-width:900px;
+  overflow-y:auto;
+  transition:margin-left .28s;
+  margin-left:0
 }
-body.sb-hidden #main{margin-left:0}
 
-/* Overlay (unpinned open state on click) */
 #sb-overlay{
-display:none;position:fixed;inset:0;z-index:199;background:rgba(30,15,5,.25);
-backdrop-filter:blur(1px);
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:199;
+  background:rgba(30,15,5,.25)
 }
 #sb-overlay.show{display:block}
 
-/* Toggle button — always visible, sticks to left edge */
 #sb-toggle{
-position:fixed;top:18px;left:12px;z-index:300;
-width:36px;height:36px;border-radius:10px;border:1px solid #E4D8C8;
-background:#F2EBE0;cursor:pointer;display:flex;align-items:center;justify-content:center;
-transition:left .28s cubic-bezier(.4,0,.2,1), background .15s;
-box-shadow:0 2px 8px rgba(60,30,10,.1);
+  position:fixed;
+  top:18px;left:12px;
+  z-index:300;
+  width:36px;height:36px;
+  border-radius:10px;
+  border:1px solid #E4D8C8;
+  background:#F2EBE0;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-#sb-toggle:hover{background:#E4D8C8}
-body.sb-hidden #sb-toggle{left:12px}
-body:not(.sb-hidden) #sb-toggle{left:232px}
-
-/* Pin button inside sidebar header */
-#sb-pin{
-width:28px;height:28px;border-radius:8px;border:1px solid #E4D8C8;
-background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;
-transition:background .15s, border-color .15s;margin-left:auto;flex-shrink:0;
-}
-#sb-pin:hover{background:#E4D8C8}
-#sb-pin.pinned{background:#FAEADE;border-color:#C4714A}
 
 /* Sidebar internals */
-.sb-brand{padding:0 20px 24px;display:flex;align-items:center;gap:10px}
-.sb-icon{width:34px;height:34px;background:#C4714A;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.sb-name{font-family:‘Lora’,Georgia,serif;font-weight:700;font-size:16px;color:#2E1F0F}
+.sb-brand{
+  padding:0 20px 24px;
+  display:flex;
+  align-items:center;
+  gap:10px
+}
+.sb-icon{
+  width:34px;height:34px;
+  background:#C4714A;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center
+}
+.sb-name{
+  font-family:'Lora',Georgia,serif;
+  font-weight:700;
+  font-size:16px
+}
 .sb-sub{font-size:11px;color:#A08B76}
-.sb-nav{flex:1;padding:0 12px;display:flex;flex-direction:column;gap:2px}
-.nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:none;cursor:pointer;width:100%;text-align:left;background:transparent;color:#6B5240;font-family:‘DM Sans’,‘Segoe UI’,sans-serif;font-weight:400;font-size:14px;transition:all .15s ease}
+
+.nav-btn{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border-radius:10px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  font-size:14px;
+  color:#6B5240
+}
 .nav-btn:hover{background:#E4D8C8}
 .nav-btn.active{background:#FAEADE;color:#9E5636;font-weight:600}
-.sb-footer{padding:16px 20px;border-top:1px solid #E4D8C8;font-size:11px;color:#A08B76;line-height:1.5}
 
-/* Card */
-.card{background:#fff;border-radius:16px;border:1px solid #E4D8C8;box-shadow:0 2px 12px rgba(60,30,10,.08)}
-
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:7px;border-radius:10px;font-family:‘DM Sans’,‘Segoe UI’,sans-serif;font-weight:500;cursor:pointer;transition:opacity .18s;border:none;font-size:14px;padding:10px 20px}
-.btn:hover{opacity:.85}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-primary{background:#C4714A;color:#fff}
-.btn-secondary{background:#F2EBE0;color:#2E1F0F;border:1px solid #E4D8C8}
-.btn-ghost{background:transparent;color:#6B5240}
-.btn-green{background:#4E8B6A;color:#fff}
-.btn-sm{padding:6px 14px!important;font-size:13px!important}
-
-/* Badge */
-.badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.04em}
-
-/* Inputs */
-input[type=text],input[type=password],textarea,select{width:100%;padding:10px 14px;border-radius:10px;border:1px solid #E4D8C8;background:#FDF8F2;font-family:‘DM Sans’,‘Segoe UI’,sans-serif;font-size:14px;color:#2E1F0F;outline:none;transition:border-color .2s}
-input[type=text]:focus,input[type=password]:focus,textarea:focus{border-color:#C4714A}
-input[type=time]{padding:8px 12px;border-radius:8px;border:1px solid #E4D8C8;background:#FDF8F2;font-family:‘DM Sans’,‘Segoe UI’,sans-serif;font-size:16px;color:#2E1F0F;outline:none}
-textarea{resize:vertical}
-
-/* Toggle */
-.tog{width:44px;height:24px;border-radius:999px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
-.tog-dot{width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;transition:left .2s}
-
-/* Modal */
-.modal-bg{position:fixed;inset:0;background:rgba(30,15,5,.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
-.modal-box{background:#fff;border-radius:20px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:0 8px 32px rgba(60,30,10,.12);animation:fadeUp .3s ease}
-.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #E4D8C8}
-.modal-head h3{font-family:‘Lora’,Georgia,serif;font-size:18px;font-weight:600}
-.modal-close{background:none;border:none;cursor:pointer;color:#A08B76;padding:4px;display:flex;align-items:center}
-.modal-body{padding:20px 24px}
-
-/* Checkbox */
-.cb{width:22px;height:22px;border-radius:6px;border:2px solid #E4D8C8;background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
-.cb.on{background:#4E8B6A;border-color:#4E8B6A}
-.cb-sm{width:18px;height:18px;border-radius:4px}
-
-/* Icon button */
-.icon-btn{width:28px;height:28px;border-radius:6px;border:1px solid #E4D8C8;background:#FDF8F2;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.icon-btn:hover{background:#F2EBE0}
-
-/* Tip pill */
-.tip-pill{padding:6px 12px;border-radius:999px;border:1px solid #E4D8C8;background:#FDF8F2;font-size:12px;color:#6B5240;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:‘DM Sans’,sans-serif;transition:background .15s}
-.tip-pill:hover{background:#F2EBE0}
-
-/* Progress */
-.prog-track{flex:1;height:4px;border-radius:2px;background:#E4D8C8}
-.prog-fill{height:100%;border-radius:2px;transition:width .4s ease}
-
-/* Subtask */
-.sub-item{display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 10px;border-radius:8px;border:1px solid #E4D8C8;transition:all .15s}
-
-@media(max-width:700px){#main{padding:16px;max-width:100%}body.sb-hidden #sb-toggle{left:12px}body:not(.sb-hidden) #sb-toggle{left:12px}}
+.card{
+  background:#fff;
+  border-radius:16px;
+  border:1px solid #E4D8C8;
+  box-shadow:0 2px 12px rgba(60,30,10,.08)
+}
 </style>
-
 </head>
-<body>
-<!-- Sidebar toggle (hamburger) -->
-<button id="sb-toggle" onclick="sbToggle()" title="Toggle menu" aria-label="Toggle navigation">
-  <svg id="sb-toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B5240" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-  </svg>
-</button>
 
-<!-- Overlay for unpinned state -->
+<body>
+
+<button id="sb-toggle" onclick="sbToggle()" aria-label="Toggle navigation">
+  ☰
+</button>
 
 <div id="sb-overlay" onclick="sbToggle()"></div>
 
 <div id="app">
-  <nav id="sidebar">
-    <div class="sb-brand">
-      <div class="sb-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 007 4.5v.05A2.5 2.5 0 004.55 7H4.5A2.5 2.5 0 002 9.5v1A2.5 2.5 0 004.5 13h.05A2.5 2.5 0 007 15.5v.05A2.5 2.5 0 009.5 18H10v1a1 1 0 002 0v-1h.5A2.5 2.5 0 0015 15.55V15.5A2.5 2.5 0 0017.5 13h.05A2.5 2.5 0 0020 10.5v-1A2.5 2.5 0 0017.5 7h-.05A2.5 2.5 0 0015 4.55V4.5A2.5 2.5 0 0012.5 2h-3z"/></svg>
-      </div>
-      <div><div class="sb-name">Focusly</div><div class="sb-sub">ADHD Support</div></div>
-      <!-- Pin button -->
-      <button id="sb-pin" onclick="sbPin()" title="Pin sidebar open" aria-label="Pin sidebar">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-        </svg>
-      </button>
+<nav id="sidebar">
+  <div class="sb-brand">
+    <div class="sb-icon">🧠</div>
+    <div>
+      <div class="sb-name">Focusly</div>
+      <div class="sb-sub">ADHD Support</div>
     </div>
-    <div class="sb-nav">
-      <button class="nav-btn active" data-view="dashboard" onclick="navigate('dashboard')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Today
-      </button>
-      <button class="nav-btn" data-view="tasks" onclick="navigate('tasks')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Tasks
-      </button>
-      <button class="nav-btn" data-view="projects" onclick="navigate('projects')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>Projects
-      </button>
-      <button class="nav-btn" data-view="focus" onclick="navigate('focus')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Focus
-      </button>
-      <button class="nav-btn" data-view="reminders" onclick="navigate('reminders')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Reminders
-      </button>
-      <button class="nav-btn" data-view="sleep" onclick="navigate('sleep')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>Sleep
-      </button>
-      <button class="nav-btn" data-view="toolkit" onclick="navigate('toolkit')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 00-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 012-3.95A12.88 12.88 0 0122 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 01-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>Toolkit
-      </button>
-    </div>
-    <div class="sb-footer">💡 Remember: One thing at a time is progress.</div>
-  </nav>
-  <main id="main"></main>
+  </div>
+
+  <div style="padding:0 12px">
+    <button class="nav-btn active" data-view="dashboard" onclick="navigate('dashboard')">Today</button>
+    <button class="nav-btn" data-view="tasks" onclick="navigate('tasks')">Tasks</button>
+    <button class="nav-btn" data-view="projects" onclick="navigate('projects')">Projects</button>
+    <button class="nav-btn" data-view="focus" onclick="navigate('focus')">Focus</button>
+    <button class="nav-btn" data-view="reminders" onclick="navigate('reminders')">Reminders</button>
+    <button class="nav-btn" data-view="sleep" onclick="navigate('sleep')">Sleep</button>
+    <button class="nav-btn" data-view="toolkit" onclick="navigate('toolkit')">Toolkit</button>
+  </div>
+</nav>
+
+<main id="main"></main>
 </div>
+
 <div id="modal-root"></div>
+
 <script>
-// ─── SVG icon helper ──────────────────────────────────────────────────────────
-const IC={
-  info:`<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>`,
-  plus:`<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>`,
-  check:`<polyline points="20 6 9 17 5 12"/>`,
-  trash:`<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4h6v2"/>`,
-  chevD:`<polyline points="6 9 12 15 18 9"/>`,
-  chevR:`<polyline points="9 18 15 12 9 6"/>`,
-  play:`<polygon points="5 3 19 12 5 21 5 3"/>`,
-  pause:`<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`,
-  refresh:`<polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/>`,
-  cal:`<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
-  close:`<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
-  capture:`<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>`,
-  star:`<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`,
-};
-const ic=(n,sz=18,col='currentColor',st='')=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="${st}">${IC[n]||''}</svg>`;
-
-// ─── State ────────────────────────────────────────────────────────────────────
-const S={
-view:‘dashboard’, energy:null, showCapture:false,
-tasks:[
-{id:1,title:‘Complete monthly report’,notes:‘For team meeting’,dueDate:‘Today’,done:false,
-subtasks:[{id:11,title:‘Gather data from spreadsheet’,done:true},{id:12,title:‘Write summary paragraph’,done:false},{id:13,title:‘Send to manager’,done:false}]},
-{id:2,title:‘Book GP appointment’,notes:‘Medication review’,dueDate:’’,done:false,subtasks:[]},
-{id:3,title:‘Reply to school emails’,notes:’’,dueDate:‘This week’,done:false,subtasks:[]},
-{id:4,title:‘Renew car insurance’,notes:‘Due end of month’,dueDate:’’,done:true,subtasks:[]},
-],
-expandedTask:null,
-captures:[{id:1,text:‘Call Mum on Sunday’},{id:2,text:‘Look into ADHD coaching referral’}],
-reminders:[
-{id:1,emoji:‘💊’,label:‘Medication’, time:‘08:00’,   repeat:‘Daily’,   active:true},
-{id:2,emoji:‘💧’,label:‘Hydration’,  time:‘Every 2h’,repeat:‘Daily’,   active:true},
-{id:3,emoji:‘🔑’,label:‘Keys check’, time:‘07:45’,   repeat:‘Weekdays’,active:true},
-{id:4,emoji:‘🏃’,label:‘School run’, time:‘15:15’,   repeat:‘Weekdays’,active:false},
-{id:5,emoji:‘😴’,label:‘Wind down’,  time:‘21:30’,   repeat:‘Daily’,   active:false},
-],
-projects:[
-{id:1,name:‘Home Renovation’,  emoji:‘🏠’,color:’#C89030’,cLight:’#FBF2DC’,tasks:8, notes:‘Bathroom first’},
-{id:2,name:‘Job Applications’, emoji:‘💼’,color:’#7065A8’,cLight:’#ECEAF8’,tasks:5, notes:‘CV draft done’},
-{id:3,name:‘Study: Level 3’,   emoji:‘📚’,color:’#4E8B6A’,cLight:’#E0F0E8’,tasks:12,notes:‘Assignment due March’},
-],
-focus:{mode:‘idle’,secs:25*60,cycle:0,dur:25,brk:5,sound:‘none’},
-timerIv:null,
-sleep:{
-bed:‘22:00’,wake:‘07:00’,wind:null,
-strat:[
-{id:‘s1’,label:‘Screen-free 60 mins before bed’,on:true},
-{id:‘s2’,label:‘Cool room (16–18°C)’,            on:false},
-{id:‘s3’,label:‘Consistent wind-down routine’,   on:true},
-{id:‘s4’,label:‘Single alarm only (no snoozing)’,on:false},
-{id:‘s5’,label:‘White/brown noise for sleep’,    on:true},
-],
-list:[
-{id:0,label:‘Alarm off ✅’,done:false},{id:1,label:‘Stretch 2 minutes’,done:false},
-{id:2,label:‘Drink water’,done:false}, {id:3,label:‘Medication’,done:false},
-{id:4,label:‘Open curtains’,done:false},{id:5,label:‘Quick shower’,done:false},
-{id:6,label:‘Bag check’,done:false},   {id:7,label:‘Breakfast’,done:false},
-],
-},
-breathIv:null,
+/* ─── State ─────────────────────────────────────────────── */
+const S = {
+  view: 'dashboard',
+  tasks: [
+    { id: 1, title: 'Complete monthly report', done: false, subtasks: [] },
+    { id: 2, title: 'Book GP appointment', done: false, subtasks: [] },
+    { id: 3, title: 'Renew car insurance', done: true, subtasks: [] }
+  ]
 };
 
-const TIPS={
-initiation:{title:‘Task Initiation Strategies’,color:’#C89030’,bg:’#FBF2DC’,
-tips:[‘⚡ 2-Minute Rule: If it takes under 2 minutes, do it now.’,‘🚪 Body Double: Work alongside someone (in person or virtually).’,‘🎵 Use a specific playlist you only play when working.’,‘⏱️ Set a 5-minute timer just to “start” — stopping is allowed.’,‘📍 Anchor to an existing habit (after coffee → start task).’,‘🔔 Implementation intention: “When X happens, I will do Y”.’],
-source:‘CHADD, ADDitude Magazine, NICE NG87’},
-overwhelm:{title:‘Overwhelm Reduction’,color:’#C45A7A’,bg:’#FAEAF0’,
-tips:[‘🧩 Break task into the smallest possible first step.’,‘📝 Write ALL subtasks out — externalise the mental load.’,‘🎯 Choose ONE thing to do right now. Just one.’,‘😮‍💨 Box breathing: 4s in → 4s hold → 4s out → 4s hold.’,‘🏃 Move your body first if frozen — even a short walk helps.’,‘💬 Say aloud what you're about to do before you do it.’],
-source:‘ADHD Foundation, ADDitude Magazine’},
-timeBlindness:{title:‘Time-Blindness Strategies’,color:’#7065A8’,bg:’#ECEAF8’,
-tips:[‘⏰ Use visible, analogue timers on your desk.’,‘📅 Time block your calendar with buffer zones between tasks.’,‘🔔 Set reminders 15 min AND 5 min before everything.’,‘📱 Use interval timers to resurface regularly.’,‘✍️ Estimate task time, then triple it (the “3× rule”).’,‘🗓️ Review tomorrow's schedule every evening.’],
-source:‘Dr. Russell Barkley – ADHD & Time Management, CHADD’},
-environment:{title:‘Environment Setup’,color:’#4E8B6A’,bg:’#E0F0E8’,
-tips:[‘🎧 Noise-cancelling headphones or brown/white noise.’,‘📵 Put phone in another room or use app blockers.’,‘💡 Bright, cool-toned lighting for focus tasks.’,‘🌡️ Cooler room temperature tends to aid concentration.’,‘🗂️ Clear desk of everything not related to current task.’,‘🌿 A plant or natural element can reduce stress.’],
-source:‘ADHD UK, ADDitude Magazine’},
-};
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+/* ─── Navigation ───────────────────────────────────────── */
 function navigate(v){
-S.view=v;
-document.querySelectorAll(’.nav-btn’).forEach(b=>b.classList.toggle(‘active’,b.dataset.view===v));
-renderMain();
+  S.view = v;
+  document.querySelectorAll('.nav-btn')
+    .forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  render();
 }
+
+/* ─── Rendering ────────────────────────────────────────── */
 function render(){
-document.querySelectorAll(’.nav-btn’).forEach(b=>b.classList.toggle(‘active’,b.dataset.view===S.view));
-renderMain();
-}
-function renderMain(){
-const m=document.getElementById(‘main’);m.innerHTML=’’;
-const fn={dashboard:vDash,tasks:vTasks,projects:vProjects,focus:vFocus,reminders:vReminders,sleep:vSleep,toolkit:vToolkit}[S.view];
-if(fn)m.appendChild(fn());
-}
-
-// DOM factories
-function div(st,html=’’){const d=document.createElement(‘div’);if(st)Object.assign(d.style,st);if(html)d.innerHTML=html;return d;}
-function p(st,txt){const e=document.createElement(‘p’);Object.assign(e.style,st);e.textContent=txt;return e;}
-function h(tag,st,html=’’){const e=document.createElement(tag);if(st)Object.assign(e.style,st);if(html)e.innerHTML=html;return e;}
-function card(st={}){const d=document.createElement(‘div’);d.className=‘card’;Object.assign(d.style,st);return d;}
-function badge(txt,color,bg){const s=document.createElement(‘span’);s.className=‘badge’;s.style.color=color;s.style.background=bg;s.textContent=txt;return s;}
-function mkbtn(html,cls,onclick){const b=document.createElement(‘button’);b.className=‘btn ‘+cls;b.innerHTML=html;b.onclick=onclick;return b;}
-function iconBtn(name,onclick){const b=document.createElement(‘button’);b.className=‘icon-btn’;b.innerHTML=ic(name,13,’#A08B76’);b.onclick=onclick;return b;}
-function toggle(active,onclick,activeCol=’#4E8B6A’){
-const w=document.createElement(‘button’);w.className=‘tog’;w.style.background=active?activeCol:’#E4D8C8’;w.onclick=onclick;
-const d=document.createElement(‘div’);d.className=‘tog-dot’;d.style.left=active?‘23px’:‘3px’;w.appendChild(d);return w;
-}
-function inp(ph,val=’’){const i=document.createElement(‘input’);i.type=‘text’;i.placeholder=ph;i.value=val;return i;}
-function ta(ph,val=’’,rows=3){const t=document.createElement(‘textarea’);t.placeholder=ph;t.value=val;t.rows=rows;t.style.width=‘100%’;return t;}
-function wrap(cls,st={}){const d=document.createElement(‘div’);d.className=cls;Object.assign(d.style,st);return d;}
-
-function showModal(title,width,fn){
-document.getElementById(‘modal-root’).innerHTML=’’;
-const bg=div({position:‘fixed’,inset:‘0’,background:‘rgba(30,15,5,.45)’,zIndex:‘1000’,display:‘flex’,alignItems:‘center’,justifyContent:‘center’,padding:‘16px’,backdropFilter:‘blur(3px)’});
-bg.className=‘modal-bg’;
-bg.onclick=e=>{if(e.target===bg)closeModal();};
-const box=document.createElement(‘div’);box.className=‘modal-box’;box.style.maxWidth=width+‘px’;
-const head=document.createElement(‘div’);head.className=‘modal-head’;
-head.innerHTML=`<h3>${title}</h3>`;
-const cl=document.createElement(‘button’);cl.className=‘modal-close’;cl.innerHTML=ic(‘close’,20,’#A08B76’);cl.onclick=closeModal;
-head.appendChild(cl);
-const body=document.createElement(‘div’);body.className=‘modal-body’;
-fn(body);
-box.append(head,body);bg.appendChild(box);document.getElementById(‘modal-root’).appendChild(bg);
-}
-function closeModal(){document.getElementById(‘modal-root’).innerHTML=’’;}
-
-function sleepDur(bed,wake){
-const[bH,bM]=bed.split(’:’).map(Number),[wH,wM]=wake.split(’:’).map(Number);
-let m=(wH*60+wM)-(bH*60+bM);if(m<0)m+=1440;return`${Math.floor(m/60)}h ${m%60}m`;
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+  if(S.view === 'dashboard'){
+    main.innerHTML = '<h1>Dashboard</h1><p>You are doing great today.</p>';
+  }
+  if(S.view === 'tasks'){
+    const ul = document.createElement('ul');
+    S.tasks.forEach(t=>{
+      const li = document.createElement('li');
+      li.textContent = t.title + (t.done ? ' ✅' : '');
+      ul.appendChild(li);
+    });
+    main.appendChild(ul);
+  }
 }
 
-// ─── Tip modal ────────────────────────────────────────────────────────────────
-function showTip(key){
-const t=TIPS[key];
-showModal(t.title,520,body=>{
-const pill=div({display:‘flex’,alignItems:‘center’,gap:‘10px’,marginBottom:‘16px’});
-pill.innerHTML=`<span class="badge" style="color:${t.color};background:${t.bg};padding:4px 14px">📚 Evidence-based strategies</span>`;
-body.appendChild(pill);
-t.tips.forEach((tip,i)=>{
-const d=div({padding:‘12px 14px’,borderRadius:‘10px’,background:’#FDF8F2’,border:‘1px solid #E4D8C8’,fontSize:‘14px’,lineHeight:‘1.5’,marginBottom:‘8px’,animation:`slideIn .3s ease ${i*.05}s both`});
-d.textContent=tip;body.appendChild(d);
-});
-body.appendChild(p({marginTop:‘16px’,fontSize:‘12px’,color:’#A08B76’,fontStyle:‘italic’},’Source: ’+t.source));
-});
+/* ─── Sidebar ──────────────────────────────────────────── */
+let sbOpen = true;
+
+function sbToggle(){
+  sbOpen = !sbOpen;
+  document.getElementById('sidebar').classList.toggle('hidden', !sbOpen);
 }
 
-// ─── AI Breakdown ─────────────────────────────────────────────────────────────
-function showAI(task){
-showModal(‘🤖 AI Task Breakdown’,540,body=>{
-const tl=div({padding:‘10px 14px’,borderRadius:‘10px’,background:’#FAEADE’,marginBottom:‘16px’,fontSize:‘14px’,color:’#9E5636’,fontWeight:‘500’});
-tl.textContent=‘📋 ‘+task.title;body.appendChild(tl);
-const note=div({padding:‘12px’,borderRadius:‘10px’,background:’#FBF2DC’,border:‘1px solid rgba(200,144,48,.4)’,fontSize:‘13px’,color:’#6B5240’,marginBottom:‘16px’,lineHeight:‘1.6’});
-note.textContent=‘🔑 Enter your Anthropic API key to generate steps. Never stored — used only for this request.’;body.appendChild(note);
-const ki=document.createElement(‘input’);ki.type=‘password’;ki.placeholder=‘sk-ant-… (Anthropic API key)’;ki.style.cssText=‘width:100%;padding:10px 14px;border-radius:10px;border:1px solid #E4D8C8;background:#FDF8F2;font-family:DM Sans,sans-serif;font-size:14px;color:#2E1F0F;outline:none;margin-bottom:12px’;
-body.appendChild(ki);
-const res=div({marginTop:‘4px’});body.appendChild(res);
-const genBtn=mkbtn(ic(‘star’,16,’#fff’)+‘✨ Generate Steps’,‘btn-primary’,async()=>{
-const key=ki.value.trim();if(!key){alert(‘Please enter your Anthropic API key.’);return;}
-genBtn.disabled=true;genBtn.innerHTML=‘Generating…’;
-res.innerHTML=`<div style="text-align:center;padding:24px"><div style="width:32px;height:32px;border:3px solid #FAEADE;border-top-color:#C4714A;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px"></div><p style="color:#A08B76;font-size:14px">Breaking it down...</p></div>`;
-try{
-const r=await fetch(‘https://api.anthropic.com/v1/messages’,{method:‘POST’,
-headers:{‘Content-Type’:‘application/json’,‘x-api-key’:key,‘anthropic-version’:‘2023-06-01’},
-body:JSON.stringify({model:‘claude-sonnet-4-20250514’,max_tokens:800,
-messages:[{role:‘user’,content:`You are an ADHD coach. Break this task into 4-6 small, concrete, ADHD-friendly steps. Each step starts with a verb, takes ≤10 minutes, uses plain simple language. Task: "${task.title}". Respond ONLY with a JSON array of strings.`}]})});
-const data=await r.json();
-const steps=JSON.parse((data.content?.[0]?.text||’[]’).replace(/`json|`/g,’’).trim());
-res.innerHTML=’’;
-steps.forEach((step,i)=>{
-const row=div({display:‘flex’,alignItems:‘flex-start’,gap:‘10px’,padding:‘10px 12px’,borderRadius:‘8px’,background:’#FDF8F2’,border:‘1px solid #E4D8C8’,marginBottom:‘8px’});
-row.innerHTML=`<span style="min-width:20px;height:20px;border-radius:6px;background:#FAEADE;color:#C4714A;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">${i+1}</span><span style="font-size:13px;color:#6B5240">${step}</span>`;
-res.appendChild(row);
-});
-const br=div({display:‘flex’,gap:‘8px’,marginTop:‘8px’});
-br.appendChild(mkbtn(‘✅ Add to Task’,‘btn-primary btn-sm’,()=>{
-steps.forEach(s=>task.subtasks.push({id:Date.now()+Math.random(),title:s,done:false}));
-closeModal();S.expandedTask=task.id;render();
-}));
-br.appendChild(mkbtn(‘Try Again’,‘btn-secondary btn-sm’,()=>{res.innerHTML=’’;genBtn.disabled=false;genBtn.innerHTML=ic(‘star’,16,’#fff’)+‘✨ Generate Steps’;}));
-res.appendChild(br);
-}catch(e){
-res.innerHTML=`<p style="color:#C45A7A;font-size:14px">Error: ${e.message}</p>`;
-genBtn.disabled=false;genBtn.innerHTML=ic(‘star’,16,’#fff’)+‘✨ Generate Steps’;
-}
-});
-body.appendChild(genBtn);
-});
-}
-
-// ─── VIEW: Dashboard ──────────────────────────────────────────────────────────
-function vDash(){
-const today=new Date().toLocaleDateString(‘en-GB’,{weekday:‘long’,day:‘numeric’,month:‘long’});
-const pending=S.tasks.filter(t=>!t.done),doneN=S.tasks.filter(t=>t.done).length;
-const sec=wrap(‘fade-up’,{display:‘flex’,flexDirection:‘column’,gap:‘20px’});
-
-// Header
-const hdr=div({});hdr.innerHTML=`<p style="font-size:13px;color:#A08B76;margin-bottom:4px">${today}</p><h1 style="font-family:Lora,Georgia,serif;font-size:28px;font-weight:700;color:#2E1F0F">Good morning ✨</h1><p style="color:#6B5240;margin-top:6px;font-size:15px">Let's make today manageable — one step at a time.</p>`;
-sec.appendChild(hdr);
-
-// Energy card
-const eCard=card({padding:‘20px’});
-eCard.appendChild(h(‘h2’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’,marginBottom:‘14px’,color:’#2E1F0F’},‘How's your energy right now?’));
-const eRow=div({display:‘flex’,gap:‘10px’});
-[{id:‘low’,emoji:‘🔋’,label:‘Low’,color:’#C45A7A’,bg:’#FAEAF0’},{id:‘medium’,emoji:‘⚡’,label:‘Medium’,color:’#C89030’,bg:’#FBF2DC’},{id:‘high’,emoji:‘🚀’,label:‘High’,color:’#4E8B6A’,bg:’#E0F0E8’}].forEach(e=>{
-const act=S.energy===e.id;
-const b=document.createElement(‘button’);
-b.style.cssText=`flex:1;padding:12px 8px;border-radius:12px;border:2px solid ${act?e.color:'#E4D8C8'};background:${act?e.bg:'#FDF8F2'};cursor:pointer;transition:all .18s;text-align:center;font-family:DM Sans,sans-serif`;
-b.innerHTML=`<div style="font-size:22px">${e.emoji}</div><div style="font-size:13px;font-weight:600;color:${act?e.color:'#6B5240'};margin-top:4px">${e.label}</div>`;
-b.onclick=()=>{S.energy=e.id;render();};eRow.appendChild(b);
-});
-eCard.appendChild(eRow);
-if(S.energy){
-const msgs={low:‘💙 Low energy day — prioritise your most essential task only. Be kind to yourself.’,medium:‘🌤️ Medium energy — pick 2-3 tasks max. Take breaks every 25 minutes.’,high:‘🌟 High energy — great time for your hardest task! Watch for hyperfocus.’};
-const note=div({marginTop:‘14px’,padding:‘10px 14px’,borderRadius:‘10px’,background:’#FDF8F2’,fontSize:‘13px’,color:’#6B5240’});note.textContent=msgs[S.energy];eCard.appendChild(note);
-}
-sec.appendChild(eCard);
-
-// 2-col
-const grid=div({display:‘grid’,gridTemplateColumns:‘1fr 1fr’,gap:‘16px’});
-
-// Focus card
-const fc=card({padding:‘20px’});
-const fh=div({display:‘flex’,justifyContent:‘space-between’,alignItems:‘center’,marginBottom:‘14px’});
-fh.appendChild(h(‘h2’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’},‘Today's Focus’));
-fh.appendChild(badge(doneN+’ done’,’#4E8B6A’,’#E0F0E8’));fc.appendChild(fh);
-const top3=pending.slice(0,3);
-if(!top3.length){const ep=p({color:’#A08B76’,fontSize:‘14px’},‘No tasks yet — add some in Tasks!’);fc.appendChild(ep);}
-else top3.forEach((t,i)=>{
-const row=div({display:‘flex’,alignItems:‘center’,gap:‘10px’,padding:‘8px 10px’,borderRadius:‘8px’,background:i===0?’#FAEADE’:’#FDF8F2’,border:`1px solid ${i===0?'#FAEADE':'#E4D8C8'}`,marginBottom:‘8px’,animation:`slideIn .3s ease ${i*.08}s both`});
-row.innerHTML=`<div style="width:8px;height:8px;border-radius:50%;background:${i===0?'#C4714A':'#E4D8C8'};flex-shrink:0"></div><span style="font-size:13px;color:${i===0?'#9E5636':'#6B5240'};font-weight:${i===0?500:400}">${t.title}</span>`;
-fc.appendChild(row);
-});
-grid.appendChild(fc);
-
-// Streak
-const sc=card({padding:‘20px’});
-sc.appendChild(h(‘h2’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’,marginBottom:‘14px’},‘Your Streak’));
-[{label:‘Tasks completed’,val:doneN,ico:‘check’,color:’#4E8B6A’},{label:‘Focus sessions’,val:3,ico:‘refresh’,color:’#7065A8’},{label:‘Day streak’,val:5,ico:‘star’,color:’#C89030’}].forEach(s=>{
-const row=div({display:‘flex’,justifyContent:‘space-between’,alignItems:‘center’,marginBottom:‘10px’});
-row.innerHTML=`<div style="display:flex;align-items:center;gap:8px">${ic(s.ico,14,s.color)}<span style="font-size:13px;color:#6B5240">${s.label}</span></div><span style="font-family:Lora,Georgia,serif;font-weight:700;font-size:18px;color:${s.color}">${s.val}</span>`;
-sc.appendChild(row);
-});
-grid.appendChild(sc);sec.appendChild(grid);
-
-// Capture
-const cc=card({padding:‘20px’});
-const ch=div({display:‘flex’,justifyContent:‘space-between’,alignItems:‘center’,marginBottom:‘14px’});
-const chl=div({});chl.innerHTML=’<h2 style="font-family:Lora,Georgia,serif;font-size:16px">Quick Capture</h2><p style="font-size:12px;color:#A08B76;margin-top:2px">Dump thoughts here. Process later.</p>’;
-ch.appendChild(chl);
-ch.appendChild(mkbtn(ic(‘plus’,13,’#fff’)+’ Capture’,‘btn-primary btn-sm’,()=>{S.showCapture=!S.showCapture;render();}));
-cc.appendChild(ch);
-if(S.showCapture){
-const cf=div({marginBottom:‘14px’,animation:‘fadeUp .2s ease’});
-const ct=ta(‘What's in your head right now?’);cf.appendChild(ct);
-const cr=div({display:‘flex’,gap:‘8px’,marginTop:‘8px’});
-cr.appendChild(mkbtn(‘Save’,‘btn-primary btn-sm’,()=>{if(ct.value.trim()){S.captures.unshift({id:Date.now(),text:ct.value.trim()});S.showCapture=false;render();}}));
-cr.appendChild(mkbtn(‘Cancel’,‘btn-ghost btn-sm’,()=>{S.showCapture=false;render();}));
-cf.appendChild(cr);cc.appendChild(cf);
-}
-S.captures.slice(0,3).forEach(c=>{
-const row=div({display:‘flex’,alignItems:‘flex-start’,gap:‘10px’,padding:‘10px 12px’,borderRadius:‘8px’,background:’#FDF8F2’,border:‘1px solid #E4D8C8’,marginBottom:‘6px’,fontSize:‘13px’});
-row.innerHTML=ic(‘capture’,14,’#A08B76’,‘margin-top:2px;flex-shrink:0’)+`<span style="color:#6B5240;flex:1">${c.text}</span>`;
-cc.appendChild(row);
-});
-sec.appendChild(cc);return sec;
-}
-
-// ─── VIEW: Tasks ──────────────────────────────────────────────────────────────
-function vTasks(){
-const pending=S.tasks.filter(t=>!t.done),done=S.tasks.filter(t=>t.done);
-const sec=wrap(‘fade-up’,{display:‘flex’,flexDirection:‘column’,gap:‘20px’});
-
-const hdr=div({display:‘flex’,justifyContent:‘space-between’,alignItems:‘flex-end’});
-const hl=div({});hl.innerHTML=`<h1 style="font-family:Lora,Georgia,serif;font-size:26px;font-weight:700">Tasks</h1><p style="color:#A08B76;font-size:14px;margin-top:4px">${pending.length} pending · ${done.length} completed</p>`;
-hdr.appendChild(hl);
-hdr.appendChild(mkbtn(ic(‘plus’,16,’#fff’)+’ Add Task’,‘btn-primary’,()=>{
-showModal(‘New Task’,520,body=>{
-const ti=inp(‘What needs doing?’),di=inp(‘Due date (optional)’),nt=ta(‘Notes (optional)’);
-const br=div({display:‘flex’,gap:‘8px’,marginTop:‘12px’});
-br.appendChild(mkbtn(‘Save Task’,‘btn-primary’,()=>{if(!ti.value.trim())return;S.tasks.push({id:Date.now(),title:ti.value.trim(),notes:nt.value,dueDate:di.value,done:false,subtasks:[]});closeModal();render();}));
-br.appendChild(mkbtn(‘Cancel’,‘btn-ghost’,closeModal));
-body.append(ti,div({height:‘8px’}),di,div({height:‘8px’}),nt,br);
-});
-}));
-sec.appendChild(hdr);
-
-// ADHD tip pills
-const pr=div({display:‘flex’,gap:‘8px’,flexWrap:‘wrap’});
-Object.keys(TIPS).forEach(k=>{const b=document.createElement(‘button’);b.className=‘tip-pill’;b.innerHTML=ic(‘info’,12,’#A08B76’)+` ${TIPS[k].title}`;b.onclick=()=>showTip(k);pr.appendChild(b);});
-sec.appendChild(pr);
-
-// Task list
-const list=div({display:‘flex’,flexDirection:‘column’,gap:‘10px’});
-if(!pending.length){const ec=card({padding:‘20px’});ec.innerHTML=’<p style="color:#A08B76;text-align:center;padding:20px 0">All caught up! 🎉 Add a task above.</p>’;list.appendChild(ec);}
-pending.forEach((task,i)=>{
-const prog=task.subtasks.length?Math.round(task.subtasks.filter(s=>s.done).length/task.subtasks.length*100):null;
-const isExp=S.expandedTask===task.id;
-const tc=card({overflow:‘hidden’,animation:`fadeUp .3s ease ${i*.06}s both`});
-const th=div({padding:‘14px 16px’});
-const trow=div({display:‘flex’,alignItems:‘flex-start’,gap:‘12px’});
-
-```
-// Checkbox
-const cb=document.createElement('button');cb.className='cb';cb.style.cssText='margin-top:1px;flex-shrink:0';cb.onclick=()=>{task.done=!task.done;render();};
-trow.appendChild(cb);
-
-// Meta
-const meta=div({flex:'1'});
-const tr2=div({display:'flex',alignItems:'center',gap:'8px'});
-const ts=document.createElement('span');ts.style.cssText='font-weight:500;font-size:15px;color:#2E1F0F';ts.textContent=task.title;tr2.appendChild(ts);
-if(task.dueDate)tr2.appendChild(badge(task.dueDate,'#7065A8','#ECEAF8'));
-meta.appendChild(tr2);
-if(task.notes){const np=p({fontSize:'13px',color:'#A08B76',marginTop:'4px'},task.notes);meta.appendChild(np);}
-if(prog!==null){
-  const pb=div({marginTop:'8px',display:'flex',alignItems:'center',gap:'8px'});
-  const track=div({flex:'1',height:'4px',borderRadius:'2px',background:'#E4D8C8'});
-  const fill=div({height:'100%',borderRadius:'2px',background:prog===100?'#4E8B6A':'#C4714A',width:prog+'%',transition:'width .4s ease'});
-  track.appendChild(fill);pb.appendChild(track);
-  pb.appendChild(h('span',{fontSize:'11px',color:'#A08B76'},prog+'%'));meta.appendChild(pb);
-}
-trow.appendChild(meta);
-
-// Actions
-const acts=div({display:'flex',gap:'4px',flexShrink:'0'});
-const aib=document.createElement('button');aib.style.cssText='padding:4px 8px;border-radius:6px;border:1px solid #FAEADE;background:#FAEADE;color:#9E5636;font-size:11px;cursor:pointer;font-family:DM Sans,sans-serif;font-weight:600';aib.textContent='🤖 AI Break';aib.onclick=()=>showAI(task);
-const exb=document.createElement('button');exb.className='icon-btn';exb.innerHTML=ic(isExp?'chevD':'chevR',14,'#A08B76');exb.onclick=()=>{S.expandedTask=isExp?null:task.id;render();};
-const dlb=document.createElement('button');dlb.className='icon-btn';dlb.innerHTML=ic('trash',13,'#A08B76');dlb.onclick=()=>{S.tasks=S.tasks.filter(t=>t.id!==task.id);render();};
-acts.append(aib,exb,dlb);trow.appendChild(acts);th.appendChild(trow);tc.appendChild(th);
-
-// Subtasks
-if(isExp){
-  const ss=div({borderTop:'1px solid #E4D8C8',padding:'12px 16px',background:'#FDF8F2'});
-  ss.appendChild(p({fontSize:'12px',color:'#A08B76',fontWeight:'600',letterSpacing:'.05em',textTransform:'uppercase',marginBottom:'10px'},'Subtasks'));
-  task.subtasks.forEach(sub=>{
-    const si=div({display:'flex',alignItems:'center',gap:'10px',marginBottom:'8px',padding:'8px 10px',borderRadius:'8px',background:sub.done?'#E0F0E8':'#fff',border:`1px solid ${sub.done?'#E0F0E8':'#E4D8C8'}`});
-    const scb=document.createElement('button');scb.className='cb cb-sm'+(sub.done?' on':'');scb.onclick=()=>{sub.done=!sub.done;render();};
-    if(sub.done)scb.innerHTML=ic('check',10,'#fff');
-    const st=document.createElement('span');st.style.cssText=`font-size:13px;color:${sub.done?'#A08B76':'#2E1F0F'};text-decoration:${sub.done?'line-through':'none'};flex:1`;st.textContent=sub.title;
-    si.append(scb,st);ss.appendChild(si);
-  });
-  const ar=div({display:'flex',gap:'8px',marginTop:'10px'});
-  const si=inp('Add a subtask...');si.style.fontSize='13px';
-  ar.appendChild(si);
-  ar.appendChild(mkbtn('Add','btn-primary btn-sm',()=>{if(si.value.trim()){task.subtasks.push({id:Date.now(),title:si.value.trim(),done:false});render();}}));
-  ss.appendChild(ar);tc.appendChild(ss);
-}
-list.appendChild(tc);
-```
-
-});
-sec.appendChild(list);
-
-if(done.length){
-sec.appendChild(p({fontSize:‘12px’,color:’#A08B76’,fontWeight:‘600’,letterSpacing:’.05em’,textTransform:‘uppercase’,marginBottom:‘10px’,marginTop:‘8px’},‘Completed’));
-done.forEach(task=>{
-const d=div({display:‘flex’,alignItems:‘center’,gap:‘10px’,padding:‘10px 14px’,marginBottom:‘6px’,borderRadius:‘10px’,background:’#E0F0E8’,opacity:’.7’});
-d.innerHTML=ic(‘check’,14,’#4E8B6A’)+`<span style="font-size:14px;color:#6B5240;text-decoration:line-through">${task.title}</span>`;
-sec.appendChild(d);
-});
-}
-return sec;
-}
-
-// ─── VIEW: Projects ───────────────────────────────────────────────────────────
-function vProjects(){
-const sec=wrap(‘fade-up’,{display:‘flex’,flexDirection:‘column’,gap:‘20px’});
-const hdr=div({display:‘flex’,justifyContent:‘space-between’,alignItems:‘flex-end’});
-const hl=div({});hl.innerHTML=’<h1 style="font-family:Lora,Georgia,serif;font-size:26px;font-weight:700">Projects</h1><p style="color:#A08B76;font-size:14px;margin-top:4px">Dedicated workspaces for big goals</p>’;
-hdr.appendChild(hl);
-hdr.appendChild(mkbtn(ic(‘plus’,16,’#fff’)+’ New Project’,‘btn-primary’,()=>{
-showModal(‘New Project Workspace’,520,body=>{
-const er=div({display:‘flex’,gap:‘8px’,marginBottom:‘8px’});
-const ei=inp(‘📁’);ei.style.cssText=‘max-width:60px;text-align:center;font-size:20px;width:60px;padding:10px 8px’;
-const ni=inp(‘Project name…’);ni.style.flex=‘1’;er.append(ei,ni);
-const noti=inp(‘Quick note (optional)’);
-const br=div({display:‘flex’,gap:‘8px’,marginTop:‘12px’});
-br.appendChild(mkbtn(‘Create’,‘btn-primary’,()=>{if(!ni.value.trim())return;S.projects.push({id:Date.now(),name:ni.value.trim(),emoji:ei.value||‘📁’,color:’#C4714A’,cLight:’#FAEADE’,tasks:0,notes:noti.value});closeModal();render();}));
-br.appendChild(mkbtn(‘Cancel’,‘btn-ghost’,closeModal));body.append(er,noti,br);
-});
-}));
-sec.appendChild(hdr);
-
-const grid=div({display:‘grid’,gridTemplateColumns:‘repeat(auto-fill,minmax(240px,1fr))’,gap:‘14px’});
-S.projects.forEach((proj,i)=>{
-const c=card({padding:‘0’,overflow:‘hidden’,cursor:‘pointer’,animation:`fadeUp .3s ease ${i*.08}s both`,transition:‘transform .2s,box-shadow .2s’});
-c.onmouseenter=()=>{c.style.transform=‘translateY(-2px)’;c.style.boxShadow=‘0 8px 32px rgba(60,30,10,.12)’;};
-c.onmouseleave=()=>{c.style.transform=’’;c.style.boxShadow=’’;};
-const tb=div({height:‘6px’,background:proj.color});
-const body2=div({padding:‘18px’});
-body2.innerHTML=`<div style="font-size:28px;margin-bottom:8px">${proj.emoji}</div><h3 style="font-family:Lora,Georgia,serif;font-size:17px;font-weight:600;color:#2E1F0F;margin-bottom:4px">${proj.name}</h3>${proj.notes?`<p style="font-size:13px;color:#A08B76;margin-bottom:12px">${proj.notes}</p>`:''}`;
-const ft=div({display:‘flex’,alignItems:‘center’,justifyContent:‘space-between’});
-ft.appendChild(badge(proj.tasks+’ tasks’,proj.color,proj.cLight));
-ft.innerHTML+=ic(‘chevR’,14,’#A08B76’);body2.appendChild(ft);c.append(tb,body2);
-c.onclick=()=>showProjectDetail(proj);grid.appendChild(c);
-});
-sec.appendChild(grid);return sec;
-}
-function showProjectDetail(proj){
-showModal(`${proj.emoji} ${proj.name}`,600,body=>{
-const sg=div({display:‘grid’,gridTemplateColumns:‘1fr 1fr 1fr’,gap:‘10px’,marginBottom:‘16px’});
-[{label:‘Tasks’,val:proj.tasks,color:’#C4714A’},{label:‘Complete’,val:Math.floor(proj.tasks*.4),color:’#4E8B6A’},{label:‘Overdue’,val:1,color:’#C45A7A’}].forEach(s=>{
-const d=div({padding:‘14px’,borderRadius:‘10px’,background:’#FDF8F2’,border:‘1px solid #E4D8C8’,textAlign:‘center’});
-d.innerHTML=`<div style="font-family:Lora,Georgia,serif;font-size:24px;font-weight:700;color:${s.color}">${s.val}</div><div style="font-size:12px;color:#A08B76;margin-top:2px">${s.label}</div>`;
-sg.appendChild(d);
-});
-body.appendChild(sg);
-body.appendChild(p({fontSize:‘12px’,color:’#A08B76’,fontWeight:‘600’,textTransform:‘uppercase’,letterSpacing:’.05em’,marginBottom:‘8px’},‘Project Notes’));
-body.appendChild(ta(‘Add project notes…’,proj.notes));
-body.appendChild(p({fontSize:‘12px’,color:’#A08B76’,fontWeight:‘600’,textTransform:‘uppercase’,letterSpacing:’.05em’,margin:‘16px 0 8px’},‘Resources & Links’));
-const rd=div({padding:‘12px’,borderRadius:‘8px’,background:’#FDF8F2’,border:‘1px solid #E4D8C8’,fontSize:‘13px’,color:’#A08B76’,textAlign:‘center’});rd.textContent=‘Drop links, docs, or files here’;body.appendChild(rd);
-const br=div({display:‘flex’,gap:‘8px’,marginTop:‘16px’});
-br.appendChild(mkbtn(ic(‘cal’,16,’#fff’)+’ Sync to Calendar’,‘btn-green btn-sm’,()=>{}));
-br.appendChild(mkbtn(ic(‘check’,16,’#2E1F0F’)+’ View Tasks’,‘btn-secondary btn-sm’,()=>{closeModal();navigate(‘tasks’);}));
-body.appendChild(br);
-});
-}
-
-// ─── VIEW: Focus ──────────────────────────────────────────────────────────────
-function vFocus(){
-const f=S.focus;
-const TOTAL=(f.mode===‘break’?f.brk:f.dur)*60;
-const prog=((TOTAL-f.secs)/TOTAL)*100;
-const R=80,circ=2*Math.PI*R,dash=circ-(prog/100)*circ;
-const arcCol=f.mode===‘break’?’#4E8B6A’:’#C4714A’;
-const lbl=f.mode===‘break’?‘☕ Break time’:f.mode===‘idle’?‘Ready’:‘Focusing’;
-const mm=Math.floor(f.secs/60).toString().padStart(2,‘0’),ss2=(f.secs%60).toString().padStart(2,‘0’);
-
-const sec=wrap(‘fade-up’,{display:‘flex’,flexDirection:‘column’,gap:‘20px’});
-sec.innerHTML=’<div><h1 style="font-family:Lora,Georgia,serif;font-size:26px;font-weight:700">Focus Mode</h1><p style="color:#A08B76;font-size:14px;margin-top:4px">Pomodoro timer with sensory support</p></div>’;
-
-const grid=div({display:‘grid’,gridTemplateColumns:‘1fr 1fr’,gap:‘16px’});
-
-// Timer card
-const tc=card({padding:‘32px’,display:‘flex’,flexDirection:‘column’,alignItems:‘center’,gap:‘24px’});
-const sw=div({position:‘relative’,width:‘200px’,height:‘200px’});
-sw.innerHTML=`<svg id="farc-svg" width="200" height="200" style="transform:rotate(-90deg)" viewBox="0 0 200 200">
-<circle cx="100" cy="100" r="${R}" fill="none" stroke="#E4D8C8" stroke-width="10"/>
-<circle id="farc" cx="100" cy="100" r="${R}" fill="none" stroke="${arcCol}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${circ.toFixed(2)}" stroke-dashoffset="${dash.toFixed(2)}" style="transition:stroke-dashoffset .5s ease"/>
-</svg>
-
-  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-    <div id="ftime" style="font-family:Lora,Georgia,serif;font-size:42px;font-weight:700;color:#2E1F0F;line-height:1">${mm}:${ss2}</div>
-    <div id="flbl" style="font-size:12px;color:#A08B76;margin-top:4px;font-weight:500">${lbl}</div>
-  </div>`;
-  tc.appendChild(sw);
-
-const br=div({display:‘flex’,gap:‘10px’});
-if(f.mode===‘idle’||f.mode===‘paused’){br.appendChild(mkbtn(ic(‘play’,16,’#fff’)+(f.mode===‘paused’?’ Resume’:’ Start Focus’),‘btn-primary’,startF));}
-else{br.appendChild(mkbtn(ic(‘pause’,16,’#fff’)+’ Pause’,‘btn-primary’,pauseF));}
-br.appendChild(mkbtn(ic(‘refresh’,16,’#6B5240’)+’ Reset’,‘btn-secondary’,resetF));
-tc.appendChild(br);
-const mt=div({display:‘flex’,gap:‘20px’,fontSize:‘13px’,color:’#A08B76’});
-mt.innerHTML=`<div>🎯 Sessions: <strong style="color:#2E1F0F">${f.cycle}</strong></div><div>⏱️ Duration: <strong style="color:#2E1F0F">${f.dur}m</strong></div>`;
-tc.appendChild(mt);grid.appendChild(tc);
-
-// Settings col
-const col=div({display:‘flex’,flexDirection:‘column’,gap:‘12px’});
-const dc=card({padding:‘20px’});dc.appendChild(h(‘h3’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘15px’,marginBottom:‘14px’},‘Timer Settings’));
-[{label:‘Focus duration’,val:f.dur,opts:[15,20,25,30,45],fn:(v)=>{f.dur=v;if(f.mode===‘idle’)f.secs=v*60;render();}},
-{label:‘Break duration’,val:f.brk,opts:[5,10,15],fn:(v)=>{f.brk=v;render();}}].forEach(s=>{
-const g=div({marginBottom:‘12px’});g.appendChild(p({fontSize:‘12px’,color:’#A08B76’,marginBottom:‘6px’},s.label));
-const r=div({display:‘flex’,gap:‘6px’,flexWrap:‘wrap’});
-s.opts.forEach(o=>{
-const act=s.val===o;
-const b=document.createElement(‘button’);b.style.cssText=`padding:5px 12px;border-radius:8px;border:1px solid ${act?'#C4714A':'#E4D8C8'};background:${act?'#FAEADE':'#FDF8F2'};color:${act?'#9E5636':'#6B5240'};font-size:13px;cursor:pointer;font-family:DM Sans,sans-serif;font-weight:${act?'600':'400'}`;
-b.textContent=o+‘m’;b.onclick=()=>s.fn(o);r.appendChild(b);
-});
-g.appendChild(r);dc.appendChild(g);
-});
-col.appendChild(dc);
-
-const sc=card({padding:‘20px’});sc.appendChild(h(‘h3’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘15px’,marginBottom:‘14px’},‘🎧 Soundscape’));
-[{id:‘none’,label:‘Silence’,emoji:‘🔇’},{id:‘rain’,label:‘Rain’,emoji:‘🌧️’},{id:‘cafe’,label:‘Café’,emoji:‘☕’},{id:‘nature’,label:‘Nature’,emoji:‘🌿’},{id:‘brown’,label:‘Brown Noise’,emoji:‘🎵’}].forEach(s=>{
-const act=f.sound===s.id;
-const b=document.createElement(‘button’);b.style.cssText=`display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;border:1px solid ${act?'#C4714A':'#E4D8C8'};background:${act?'#FAEADE':'#FDF8F2'};cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;color:${act?'#9E5636':'#6B5240'};text-align:left;width:100%;margin-bottom:6px`;
-b.innerHTML=`<span>${s.emoji}</span>${s.label}${act?ic('check',14,'#4E8B6A','margin-left:auto'):''}`;
-b.onclick=()=>{f.sound=s.id;render();};sc.appendChild(b);
-});
-col.appendChild(sc);
-
-const hf=card({padding:‘16px’,background:’#ECEAF8’,border:‘1px solid rgba(112,101,168,.2)’});
-hf.innerHTML=’<p style="font-size:13px;color:#7065A8;line-height:1.6"><strong>⚠️ Hyperfocus alert:</strong> If you've started a new timer 3+ times without a break, step away from the screen for 5 minutes.</p>’;
-col.appendChild(hf);grid.appendChild(col);sec.appendChild(grid);return sec;
-}
-function startF(){
-const f=S.focus;f.mode=‘running’;
-if(S.timerIv)clearInterval(S.timerIv);
-S.timerIv=setInterval(()=>{
-f.secs–;
-if(f.secs<=0){clearInterval(S.timerIv);if(f.mode===‘running’){f.cycle++;f.mode=‘break’;f.secs=f.brk*60;}else{f.mode=‘idle’;f.secs=f.dur*60;}render();return;}
-const ft=document.getElementById(‘ftime’);if(ft)ft.textContent=`${Math.floor(f.secs/60).toString().padStart(2,'0')}:${(f.secs%60).toString().padStart(2,'0')}`;
-const arc=document.getElementById(‘farc’);if(arc){const T=(f.mode===‘break’?f.brk:f.dur)*60,R=80,circ=2*Math.PI*R;arc.setAttribute(‘stroke-dashoffset’,String(circ-((T-f.secs)/T)*circ));}
-},1000);render();
-}
-function pauseF(){S.focus.mode=‘paused’;clearInterval(S.timerIv);render();}
-function resetF(){S.focus.mode=‘idle’;clearInterval(S.timerIv);S.focus.secs=S.focus.dur*60;render();}
-
-// ─── VIEW: Reminders ──────────────────────────────────────────────────────────
-function vReminders(){
-const sec=wrap(‘fade-up’,{display:‘flex’,flexDirection:‘column’,gap:‘20px’});
-const aC=S.reminders.filter(r=>r.active).length;
-const hdr=div({display:‘flex’,justifyContent:‘space-between’,alignItems:‘flex-end’});
-const hl=div({});hl.innerHTML=`<h1 style="font-family:Lora,Georgia,serif;font-size:26px;font-weight:700">Reminders</h1><p style="color:#A08B76;font-size:14px;margin-top:4px">${aC} active reminders</p>`;
-hdr.appendChild(hl);
-hdr.appendChild(mkbtn(ic(‘plus’,16,’#fff’)+’ Add Reminder’,‘btn-primary’,()=>{
-showModal(‘New Reminder’,520,body=>{
-const er=div({display:‘flex’,gap:‘8px’,marginBottom:‘8px’});
-const ei=inp(‘⏰’);ei.style.cssText=‘max-width:60px;text-align:center;font-size:20px;width:60px;padding:10px 8px’;
-const li=inp(‘Reminder name…’);li.style.flex=‘1’;er.append(ei,li);
-const tr=div({display:‘flex’,gap:‘8px’,marginBottom:‘8px’});
-const ti=inp(‘Time (e.g. 08:00)’);ti.style.flex=‘1’;
-const sel=document.createElement(‘select’);sel.style.cssText=‘flex:1;padding:10px 12px;border-radius:10px;border:1px solid #E4D8C8;background:#FDF8F2;font-family:DM Sans,sans-serif;font-size:14px;color:#2E1F0F;width:auto’;
-[‘Once’,‘Daily’,‘Weekdays’,‘Weekends’,‘Weekly’].forEach(r=>{const o=document.createElement(‘option’);o.textContent=r;sel.appendChild(o);});
-tr.append(ti,sel);
-const br=div({display:‘flex’,gap:‘8px’});
-br.appendChild(mkbtn(‘Save’,‘btn-primary’,()=>{if(!li.value.trim()||!ti.value.trim())return;S.reminders.push({id:Date.now(),emoji:ei.value||‘⏰’,label:li.value.trim(),time:ti.value.trim(),repeat:sel.value,active:true});closeModal();render();}));
-br.appendChild(mkbtn(‘Cancel’,‘btn-ghost’,closeModal));body.append(er,tr,br);
-});
-}));
-sec.appendChild(hdr);
-
-const list=div({display:‘flex’,flexDirection:‘column’,gap:‘10px’});
-S.reminders.forEach((r,i)=>{
-const c=card({padding:‘14px 18px’,opacity:r.active?‘1’:’.6’,animation:`fadeUp .3s ease ${i*.05}s both`});
-const row=div({display:‘flex’,alignItems:‘center’,gap:‘14px’});
-const icon=div({width:‘44px’,height:‘44px’,borderRadius:‘12px’,background:r.active?’#FAEADE’:’#F2EBE0’,display:‘flex’,alignItems:‘center’,justifyContent:‘center’,fontSize:‘22px’,flexShrink:‘0’});icon.textContent=r.emoji;
-const info=div({flex:‘1’});info.innerHTML=`<div style="font-weight:500;font-size:15px;color:#2E1F0F">${r.label}</div><div style="font-size:13px;color:#A08B76;margin-top:2px">⏰ ${r.time} · 🔁 ${r.repeat}</div>`;
-const ctrl=div({display:‘flex’,alignItems:‘center’,gap:‘10px’});
-ctrl.appendChild(badge(r.active?‘Active’:‘Off’,r.active?’#4E8B6A’:’#A08B76’,r.active?’#E0F0E8’:’#F2EBE0’));
-ctrl.appendChild(toggle(r.active,()=>{r.active=!r.active;render();}));
-row.append(icon,info,ctrl);c.appendChild(row);list.appendChild(c);
-});
-sec.appendChild(list);
-
-const nc=card({padding:‘20px’,background:’#FBF2DC’,border:‘1px solid rgba(200,144,48,.2)’});
-nc.innerHTML=`<h3 style="font-family:Lora,Georgia,serif;font-size:15px;color:#C89030;margin-bottom:8px">📱 Notification Channels</h3><p style="font-size:13px;color:#6B5240;margin-bottom:12px">Choose how you want to receive reminders.</p><div style="display:flex;gap:16px">${['Push notification','Email','SMS'].map((ch,i)=>`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:#6B5240"><input type=“checkbox” ${i===0?‘checked’:’’} style=“accent-color:#C4714A”>${ch}</label>`).join('')}</div>`;
-sec.appendChild(nc);return sec;
-}
-
-// ─── VIEW: Sleep ──────────────────────────────────────────────────────────────
-function vSleep(){
-const sl=S.sleep;
-const sec=wrap(‘fade-up’,{display:‘flex’,flexDirection:‘column’,gap:‘20px’});
-sec.innerHTML=’<div><h1 style="font-family:Lora,Georgia,serif;font-size:26px;font-weight:700">Sleep Routine</h1><p style="color:#A08B76;font-size:14px;margin-top:4px">ADHD often disrupts sleep — build a consistent routine</p></div>’;
-
-const grid=div({display:‘grid’,gridTemplateColumns:‘1fr 1fr’,gap:‘16px’});
-
-const sched=card({padding:‘20px’});sched.appendChild(h(‘h3’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’,marginBottom:‘16px’},‘🌙 Sleep Schedule’));
-[{label:‘Bedtime’,key:‘bed’},{label:‘Wake time’,key:‘wake’}].forEach(f=>{
-const g=div({marginBottom:‘12px’});g.appendChild(p({fontSize:‘12px’,color:’#A08B76’,marginBottom:‘4px’},f.label));
-const inp2=document.createElement(‘input’);inp2.type=‘time’;inp2.value=sl[f.key];
-inp2.addEventListener(‘change’,e=>{sl[f.key]=e.target.value;render();});g.appendChild(inp2);sched.appendChild(g);
-});
-const db=div({padding:‘12px 14px’,borderRadius:‘10px’,background:’#ECEAF8’,display:‘flex’,alignItems:‘center’,justifyContent:‘space-between’});
-db.innerHTML=`<span style="font-size:13px;color:#7065A8">Total sleep</span><span style="font-family:Lora,Georgia,serif;font-size:18px;font-weight:700;color:#7065A8">${sleepDur(sl.bed,sl.wake)}</span>`;
-sched.appendChild(db);grid.appendChild(sched);
-
-const wind=card({padding:‘20px’});wind.appendChild(h(‘h3’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’,marginBottom:‘8px’},‘😴 Wind-down’));
-wind.appendChild(p({fontSize:‘13px’,color:’#A08B76’,marginBottom:‘14px’},‘Get ready for bed notification’));
-[‘60 mins before’,‘30 mins before’,‘15 mins before’].forEach((opt,i)=>{
-const act=sl.wind===i;
-const b=document.createElement(‘button’);b.style.cssText=`padding:10px 14px;border-radius:8px;border:1px solid ${act?'#7065A8':'#E4D8C8'};background:${act?'#ECEAF8':'#FDF8F2'};color:${act?'#7065A8':'#6B5240'};cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;text-align:left;width:100%;margin-bottom:8px`;
-b.textContent=’🔔 ’+opt;b.onclick=()=>{sl.wind=i;render();};wind.appendChild(b);
-});
-grid.appendChild(wind);sec.appendChild(grid);
-
-const strat=card({padding:‘20px’});strat.appendChild(h(‘h3’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’,marginBottom:‘6px’},‘ADHD Sleep Strategies’));
-strat.appendChild(p({fontSize:‘13px’,color:’#A08B76’,marginBottom:‘14px’},‘Toggle on the strategies that work for you (ADHD UK & Sleep Foundation guidance)’));
-sl.strat.forEach(s=>{
-const row=div({display:‘flex’,alignItems:‘center’,gap:‘12px’,padding:‘12px 14px’,borderRadius:‘10px’,background:s.on?’#ECEAF8’:’#FDF8F2’,border:`1px solid ${s.on?'rgba(112,101,168,.3)':'#E4D8C8'}`,marginBottom:‘8px’});
-const lbl=document.createElement(‘span’);lbl.style.cssText=`flex:1;font-size:14px;color:${s.on?'#7065A8':'#6B5240'}`;lbl.textContent=s.label;
-const tog=toggle(s.on,()=>{s.on=!s.on;render();},’#7065A8’);
-row.append(lbl,tog);strat.appendChild(row);
-});
-sec.appendChild(strat);
-
-const cl=card({padding:‘20px’});cl.appendChild(h(‘h3’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’,marginBottom:‘6px’},‘☀️ Morning Prep Checklist’));
-cl.appendChild(p({fontSize:‘13px’,color:’#A08B76’,marginBottom:‘14px’},‘Externalise your morning routine’));
-const cg=div({display:‘grid’,gridTemplateColumns:‘1fr 1fr’,gap:‘8px’});
-sl.list.forEach(item=>{
-const b=document.createElement(‘button’);b.style.cssText=`display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;border:1px solid ${item.done?'#4E8B6A':'#E4D8C8'};background:${item.done?'#E0F0E8':'#FDF8F2'};cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;text-align:left;color:${item.done?'#4E8B6A':'#6B5240'}`;
-const cb=document.createElement(‘div’);cb.className=‘cb cb-sm’+(item.done?’ on’:’’);cb.style.flexShrink=‘0’;
-if(item.done)cb.innerHTML=ic(‘check’,10,’#fff’);
-b.append(cb,item.label);b.onclick=()=>{item.done=!item.done;render();};cg.appendChild(b);
-});
-cl.appendChild(cg);sec.appendChild(cl);return sec;
-}
-
-// ─── VIEW: Toolkit ────────────────────────────────────────────────────────────
-function vToolkit(){
-const sec=wrap(‘fade-up’,{display:‘flex’,flexDirection:‘column’,gap:‘20px’});
-sec.innerHTML=’<div><h1 style="font-family:Lora,Georgia,serif;font-size:26px;font-weight:700">Emotional Toolkit</h1><p style="color:#A08B76;font-size:14px;margin-top:4px">Non-clinical self-regulation tools for ADHD</p></div>’;
-
-const warn=card({padding:‘16px’,background:’#FBF2DC’,border:‘1px solid rgba(200,144,48,.2)’});
-warn.innerHTML=’<p style="font-size:13px;color:#6B5240;line-height:1.6">⚠️ These tools support self-regulation but are not a substitute for professional mental health support. If you're struggling, please speak with your GP or an ADHD-specialist therapist.</p>’;
-sec.appendChild(warn);
-
-const tools=[
-{id:‘box’,  emoji:‘🫁’,title:‘Box Breathing’,        desc:‘4s in → 4s hold → 4s out → 4s hold. Reduces acute stress response.’,            color:’#7065A8’,bg:’#ECEAF8’},
-{id:‘54321’,emoji:‘👁️’,title:‘5-4-3-2-1 Grounding’, desc:‘Name 5 things you see, 4 hear, 3 touch, 2 smell, 1 taste.’,                    color:’#4E8B6A’,bg:’#E0F0E8’},
-{id:‘dump’, emoji:‘📝’,title:‘Brain Dump’,            desc:‘Write everything in your head for 5 minutes. Then close the notebook.’,           color:’#C89030’,bg:’#FBF2DC’},
-{id:‘move’, emoji:‘🏃’,title:‘Movement Break’,        desc:‘2 minutes of movement resets dopamine and improves focus.’,                      color:’#C4714A’,bg:’#FAEADE’},
-{id:‘body’, emoji:‘👥’,title:‘Body Double’,           desc:‘Work with someone present (virtually or in person) — reduces task avoidance.’,   color:’#7065A8’,bg:’#ECEAF8’},
-{id:‘cold’, emoji:‘🚿’,title:‘Cold Splash’,           desc:‘Splash cold water on your face — activates the dive reflex, calms nervous system.’,color:’#4AA8C4’,bg:’#E4F4FA’},
-];
-const grid=div({display:‘grid’,gridTemplateColumns:‘repeat(auto-fill,minmax(220px,1fr))’,gap:‘14px’});
-tools.forEach((tool,i)=>{
-const c=card({padding:‘20px’,cursor:‘pointer’,animation:`fadeUp .3s ease ${i*.07}s both`,transition:‘transform .15s’});
-c.onmouseenter=()=>c.style.transform=‘translateY(-2px)’;c.onmouseleave=()=>c.style.transform=’’;
-c.innerHTML=`<div style="font-size:28px;margin-bottom:10px">${tool.emoji}</div><h3 style="font-family:Lora,Georgia,serif;font-size:15px;font-weight:600;margin-bottom:6px">${tool.title}</h3><p style="font-size:13px;color:#A08B76;line-height:1.5">${tool.desc}</p>`;
-if(tool.id===‘box’){
-const sb=mkbtn(‘Start Breathing’,‘btn-primary btn-sm’,e=>{e.stopPropagation();doBreathing(c,sb);});
-sb.style.marginTop=‘12px’;c.appendChild(sb);
-}
-grid.appendChild(c);
-});
-sec.appendChild(grid);
-
-// Progress chart
-const cc=card({padding:‘20px’});
-cc.appendChild(h(‘h3’,{fontFamily:‘Lora,Georgia,serif’,fontSize:‘16px’,marginBottom:‘16px’},‘📊 This Week's Progress’));
-const chart=div({display:‘flex’,gap:‘8px’,alignItems:‘flex-end’,height:‘80px’});
-[60,80,45,90,70,30,55].forEach((v,i)=>{
-const w=div({flex:‘1’,display:‘flex’,flexDirection:‘column’,alignItems:‘center’,gap:‘4px’});
-const bar=div({width:‘100%’,height:v*.7+’%’,borderRadius:‘4px 4px 0 0’,background:i===3?’#4E8B6A’:i<5?’#C4714A’:’#E4D8C8’,animation:`fadeUp .4s ease ${i*.08}s both`});
-w.append(bar,h(‘span’,{fontSize:‘11px’,color:’#A08B76’},‘MTWTFSS’[i]));chart.appendChild(w);
-});
-cc.appendChild(chart);cc.appendChild(p({fontSize:‘12px’,color:’#A08B76’,marginTop:‘10px’},‘Tasks completed · Best day: Thursday’));
-sec.appendChild(cc);return sec;
-}
-
-function doBreathing(card2,startBtn){
-if(S.breathIv)clearInterval(S.breathIv);
-startBtn.remove();
-const phases=[‘Breathe In’,‘Hold’,‘Breathe Out’,‘Hold’];let i=0;
-const circle=div({width:‘80px’,height:‘80px’,borderRadius:‘50%’,background:’#ECEAF8’,border:‘3px solid #7065A8’,display:‘flex’,alignItems:‘center’,justifyContent:‘center’,margin:‘12px auto 8px’,fontSize:‘11px’,fontWeight:‘700’,color:’#7065A8’,textTransform:‘uppercase’,transition:‘transform 4s ease’});
-circle.textContent=phases[0];
-const stopBtn=mkbtn(‘Stop’,‘btn-secondary btn-sm’,()=>{
-clearInterval(S.breathIv);S.breathIv=null;circle.remove();stopBtn.remove();
-const nb=mkbtn(‘Start Breathing’,‘btn-primary btn-sm’,e=>{e.stopPropagation();doBreathing(card2,nb);});nb.style.marginTop=‘12px’;card2.appendChild(nb);
-});
-stopBtn.style.cssText=‘display:block;margin:4px auto 0’;
-card2.append(circle,stopBtn);
-S.breathIv=setInterval(()=>{i=(i+1)%4;circle.textContent=phases[i];circle.style.transform=(i===0||i===2)?‘scale(1.25)’:‘scale(1)’;},4000);
-}
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
-
-// ── Sidebar state ─────────────────────────────────────────────────────────────
-const SB = {
-open: true,   // currently visible
-pinned: true, // pinned = sidebar pushes content; unpinned = floats as overlay
-};
-
-function sbInit() {
-// Default: pinned open on desktop, hidden on mobile
-if (window.innerWidth < 700) {
-SB.open = false; SB.pinned = false;
-applyBSB();
-}
-}
-
-function applyBSB() {
-const sidebar = document.getElementById(‘sidebar’);
-const main    = document.getElementById(‘main’);
-const overlay = document.getElementById(‘sb-overlay’);
-const pin     = document.getElementById(‘sb-pin’);
-const toggleBtn = document.getElementById(‘sb-toggle’);
-
-if (SB.open) {
-sidebar.classList.remove(‘hidden’);
-if (SB.pinned) {
-// Pinned: sidebar takes up space, no overlay
-sidebar.classList.remove(‘floating’);
-overlay.classList.remove(‘show’);
-document.body.classList.remove(‘sb-hidden’);
-main.style.marginLeft = ‘220px’;
-toggleBtn.style.left = ‘232px’;
-} else {
-// Unpinned open: floats over content
-sidebar.classList.add(‘floating’);
-overlay.classList.add(‘show’);
-document.body.classList.add(‘sb-hidden’);
-main.style.marginLeft = ‘0’;
-toggleBtn.style.left = ‘232px’;
-}
-} else {
-// Hidden
-sidebar.classList.add(‘hidden’);
-sidebar.classList.remove(‘floating’);
-overlay.classList.remove(‘show’);
-document.body.classList.add(‘sb-hidden’);
-main.style.marginLeft = ‘0’;
-toggleBtn.style.left = ‘12px’;
-}
-
-// Pin button state
-if (pin) {
-pin.classList.toggle(‘pinned’, SB.pinned);
-pin.title = SB.pinned ? ‘Unpin sidebar’ : ‘Pin sidebar open’;
-// Update pin icon fill
-const pinSvg = pin.querySelector(‘circle’);
-if (pinSvg) pinSvg.setAttribute(‘fill’, SB.pinned ? ‘#C4714A’ : ‘none’);
-}
-}
-
-function sbToggle() {
-SB.open = !SB.open;
-// When closing from unpinned state, keep pinned=false
-applyBSB();
-}
-
-function sbPin() {
-if (!SB.pinned) {
-// Pin it: now pushes content, close overlay
-SB.pinned = true;
-SB.open = true;
-} else {
-// Unpin: sidebar still open but now floats
-SB.pinned = false;
-SB.open = true;
-}
-applyBSB();
-}
-
-// Close unpinned sidebar when a nav item is clicked
-const _origNavigate = navigate;
-// Wrap navigate to auto-close floating sidebar
-function navigate(v) {
-if (SB.open && !SB.pinned) {
-SB.open = false;
-applyBSB();
-}
-document.querySelectorAll(’.nav-btn’).forEach(b => b.classList.toggle(‘active’, b.dataset.view === v));
-S.view = v;
-renderMain();
-}
-
-document.addEventListener(‘DOMContentLoaded’, () => { sbInit(); render(); });
-
+/* ─── Init ─────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', render);
 </script>
+
 </body>
 </html>
