@@ -399,6 +399,10 @@ resize:none;min-height:60px;
       <input class="login-input" id="login-pw" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div class="login-err" id="login-err"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin:2px 0 14px">
+      <input type="checkbox" id="login-remember" style="accent-color:#C4714A;width:16px;height:16px;cursor:pointer">
+      <label for="login-remember" style="font-size:13px;color:#6B5240;cursor:pointer;user-select:none">Stay signed in</label>
+    </div>
     <button class="btn btn-primary btn-full" id="login-submit-btn" onclick="authSubmit()">Sign in</button>
     <div id="bio-section" style="display:none">
       <div class="bio-divider">or</div>
@@ -541,6 +545,9 @@ var AUTH_MODE = 'login'; // 'login' | 'register'
 
 async function hashPw(pw) {   var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));   return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
 } function getStoredUser() { return JSON.parse(localStorage.getItem('focusly_user')||'null'); } function getSession()    { return JSON.parse(sessionStorage.getItem('focusly_sess')||'null'); } function saveSession(u)  { sessionStorage.setItem('focusly_sess', JSON.stringify(u)); } function clearSession()  { sessionStorage.removeItem('focusly_sess'); }
+function getPersistentSession(){return JSON.parse(localStorage.getItem('focusly_persistent_sess')||'null');}
+function savePersistentSession(u){localStorage.setItem('focusly_persistent_sess',JSON.stringify(u));}
+function clearPersistentSession(){localStorage.removeItem('focusly_persistent_sess');}
 
 function authToggle() {   AUTH_MODE = AUTH_MODE === 'login' ? 'register' : 'login';   var isReg = AUTH_MODE === 'register';   document.getElementById('login-title').textContent      = isReg ? 'Create account' : 'Welcome back';   document.getElementById('login-sub').textContent        = isReg ? 'Set up your Focusly account' : 'Sign in to your Focusly account';   document.getElementById('login-name-field').style.display = isReg ? 'block' : 'none';   document.getElementById('login-submit-btn').textContent = isReg ? 'Create account' : 'Sign in';   document.getElementById('login-switch-text').textContent = isReg ? 'Already have an account?' : "Don't have an account?"; document.getElementById('login-switch-link').textContent = isReg ? ' Sign in' : ' Create one';
    document.getElementById('login-err').textContent = '';
@@ -555,6 +562,7 @@ async function authSubmit() {   var email = document.getElementById('login-email
     var existing = getStoredUser();     if (existing && existing.email === email) { errEl.textContent = 'An account with that email already exists.'; btn2.disabled=false; btn2.textContent='Create account'; return; }
     var user = {name:name, email:email, hash:hash};     localStorage.setItem('focusly_user', JSON.stringify(user));
     saveSession(user);
+    if(document.getElementById('login-remember')&&document.getElementById('login-remember').checked)savePersistentSession(user);
     bootApp(user);
   } else {
     var stored = getStoredUser();
@@ -563,6 +571,7 @@ async function authSubmit() {   var email = document.getElementById('login-email
     if (stored.hash !== hash) {       var card2 = document.querySelector('.login-card');       card2.classList.add('shake'); setTimeout(function(){card2.classList.remove('shake');},500);       errEl.textContent = 'Incorrect password.'; btn2.disabled=false; btn2.textContent='Sign in'; return;
     }
     saveSession(stored);
+    if(document.getElementById('login-remember')&&document.getElementById('login-remember').checked)savePersistentSession(stored);
     bootApp(stored);
   }
 }
@@ -573,6 +582,7 @@ document.addEventListener('keydown', function(e) {   if (e.key === 'Enter' && do
 
 function authLogout() {
   clearSession();
+  clearPersistentSession();
   document.getElementById('app-shell').classList.remove('show');
   document.getElementById('login-page').classList.add('show');   AUTH_MODE = 'login';   document.getElementById('login-title').textContent = 'Welcome back';   document.getElementById('login-sub').textContent = 'Sign in to your Focusly account';   document.getElementById('login-name-field').style.display = 'none';   document.getElementById('login-submit-btn').textContent = 'Sign in';   document.getElementById('login-submit-btn').disabled = false;   document.getElementById('login-err').textContent = '';   document.getElementById('login-email').value = '';   document.getElementById('login-pw').value = '';
 }
@@ -1916,13 +1926,18 @@ function bootApp(user) {
   loadMediaLocally();
   if(sy&&sy.binId){cloudPull(sy.binId,sy.apiKey).then(function(r){if(r.ok)restoreData(r.data);renderView();});}else{renderView();}
 }
- document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function() {
   applyTheme();
-  var sess = getSession();
+  var sess = getSession() || getPersistentSession();
   if (sess) {
+    if(!getSession()) saveSession(sess);
     bootApp(sess);
-  } else {     document.getElementById('login-page').classList.add('show');
+  } else {
+    document.getElementById('login-page').classList.add('show');
     showBioButton();
+    if(bioAvailable() && localStorage.getItem('focusly_biocred')){
+      setTimeout(bioLogin, 600);
+    }
   }
 });
 </script>
